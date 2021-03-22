@@ -3,7 +3,7 @@ project(loam_velodyne)
 
 ## Compile as C++14, supported in ROS Kinetic and newer
 # set_property(TARGET invz_player PROPERTY CXX_STANDARD 17)
-add_compile_options(-std=c++11)
+add_compile_options(-std=c++14)
 
 add_definitions( -march=native )
 

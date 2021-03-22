@@ -29,9 +29,9 @@
 
 using namespace std;
 using namespace Eigen;
-int nFRAMES = 849;
+int nFRAMES = 4541;
 std::mutex m_buf;
-std::mutex m_odom2map,m_transMain;
+std::mutex m_odom2map, m_transMain;
 queue<pcl::PointCloud<pcl::PointXYZI>> fullRes_buf;
 queue<pcl::PointCloud<pcl::PointXYZI>> pointsSharp_buf;
 queue<pcl::PointCloud<pcl::PointXYZI>> lessSharp_buf;
@@ -64,32 +64,31 @@ int getRingForAngle(float angle)
     return int(((angle * 180.0 / M_PI) + 15) * _factor + 0.5);
 }
 
-boost::shared_ptr<pcl::visualization::PCLVisualizer> simpleVis (pcl::PointCloud<pcl::PointXYZI>::ConstPtr cloud)
+boost::shared_ptr<pcl::visualization::PCLVisualizer> simpleVis(pcl::PointCloud<pcl::PointXYZI>::ConstPtr cloud)
 {
-   // --------------------------------------------
-   // -----Open 3D viewer and add point cloud-----
-   // --------------------------------------------
-   boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer (new pcl::visualization::PCLVisualizer ("3D Viewer"));
-   viewer->setBackgroundColor (0, 0, 0);
-   viewer->addPointCloud<pcl::PointXYZI> (cloud, "sample cloud");
-   viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "sample cloud");
-   viewer->addCoordinateSystem (1.0);
-   viewer->initCameraParameters ();
-   return (viewer);
+    // --------------------------------------------
+    // -----Open 3D viewer and add point cloud-----
+    // --------------------------------------------
+    boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer(new pcl::visualization::PCLVisualizer("3D Viewer"));
+    viewer->setBackgroundColor(0, 0, 0);
+    viewer->addPointCloud<pcl::PointXYZI>(cloud, "sample cloud");
+    viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "sample cloud");
+    viewer->addCoordinateSystem(1.0);
+    viewer->initCameraParameters();
+    return (viewer);
 }
-
 
 boost::shared_ptr<pcl::visualization::PCLVisualizer> displayFeatures(pcl::PointCloud<pcl::PointXYZI>::ConstPtr original, pcl::PointCloud<pcl::PointXYZI>::ConstPtr c1, pcl::PointCloud<pcl::PointXYZI>::ConstPtr c2)
 {
     //     // --------------------------------------------
-//     // -----Open 3D viewer and add point cloud-----
-//     // --------------------------------------------
-    boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer (new pcl::visualization::PCLVisualizer ("3D Viewer"));
-    viewer->setBackgroundColor (0, 0, 0);
+    //     // -----Open 3D viewer and add point cloud-----
+    //     // --------------------------------------------
+    boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer(new pcl::visualization::PCLVisualizer("3D Viewer"));
+    viewer->setBackgroundColor(0, 0, 0);
     pcl::PointCloud<pcl::PointXYZRGB> orig;
     pcl::PointCloud<pcl::PointXYZRGB> corner;
     pcl::PointCloud<pcl::PointXYZRGB> flat;
-    for(int i = 0; i < original->points.size(); i++)
+    for (int i = 0; i < original->points.size(); i++)
     {
         pcl::PointXYZRGB point;
         point.x = original->points[i].x;
@@ -102,10 +101,10 @@ boost::shared_ptr<pcl::visualization::PCLVisualizer> displayFeatures(pcl::PointC
         orig.points.push_back(point);
     }
     pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> color(orig.makeShared());
-    viewer->addPointCloud<pcl::PointXYZRGB> (orig.makeShared(), color, "sample cloud");
-    viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "sample cloud");
+    viewer->addPointCloud<pcl::PointXYZRGB>(orig.makeShared(), color, "sample cloud");
+    viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "sample cloud");
 
-    for(int i = 0; i < c1->points.size(); i++)
+    for (int i = 0; i < c1->points.size(); i++)
     {
         pcl::PointXYZRGB point;
         point.x = c1->points[i].x;
@@ -118,10 +117,10 @@ boost::shared_ptr<pcl::visualization::PCLVisualizer> displayFeatures(pcl::PointC
         corner.points.push_back(point);
     }
     pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> color1(corner.makeShared());
-    viewer->addPointCloud<pcl::PointXYZRGB> (corner.makeShared(), color1, "corner");
-    viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 5, "corner");
+    viewer->addPointCloud<pcl::PointXYZRGB>(corner.makeShared(), color1, "corner");
+    viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 5, "corner");
 
-    for(int i = 0; i < c2->points.size(); i++)
+    for (int i = 0; i < c2->points.size(); i++)
     {
         pcl::PointXYZRGB point;
         point.x = c2->points[i].x;
@@ -134,25 +133,25 @@ boost::shared_ptr<pcl::visualization::PCLVisualizer> displayFeatures(pcl::PointC
         flat.points.push_back(point);
     }
     pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> color2(flat.makeShared());
-    viewer->addPointCloud<pcl::PointXYZRGB> (flat.makeShared(), color2, "flat");
-    viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 5, "flat");
+    viewer->addPointCloud<pcl::PointXYZRGB>(flat.makeShared(), color2, "flat");
+    viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 5, "flat");
 
-    viewer->addCoordinateSystem (1.0);
-    viewer->initCameraParameters ();
+    viewer->addCoordinateSystem(1.0);
+    viewer->initCameraParameters();
     return (viewer);
 }
 vector<string> loadData()
 {
     std::vector<string> v;
-    for(int i = 0; i < nFRAMES; i++)
+    for (int i = 0; i < nFRAMES; i++)
     {
         stringstream sstr;
-        sstr<<"/Users/walker/Downloads/nsh_indoor_outdoor_pcd/"<<i<<".pcd";
+        sstr << "/home/quchunlei/data/kitti/pcd/00/" << i << ".pcd";
         v.push_back(sstr.str());
     }
     return v;
 }
-void Draw() 
+void Draw()
 {
     float fx = 277.34;
     float fy = 291.402;
@@ -165,16 +164,15 @@ void Draw()
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     pangolin::OpenGlRenderState s_cam(
-            pangolin::ProjectionMatrix(1024, 768, 500, 500, 512, 389, 0.1, 1000),
-            pangolin::ModelViewLookAt(0, 10, -10, 0, 0, 0, 0.0, 1.0, 0.0)
-    );
+        pangolin::ProjectionMatrix(1024, 768, 500, 500, 512, 389, 0.1, 1000),
+        pangolin::ModelViewLookAt(0, 10, -10, 0, 0, 0, 0.0, 1.0, 0.0));
 
     pangolin::View &d_cam = pangolin::CreateDisplay()
-            .SetBounds(0.0, 1.0, pangolin::Attach::Pix(175), 1.0, -1024.0f / 768.0f)
-            .SetHandler(new pangolin::Handler3D(s_cam));
+                                .SetBounds(0.0, 1.0, pangolin::Attach::Pix(175), 1.0, -1024.0f / 768.0f)
+                                .SetHandler(new pangolin::Handler3D(s_cam));
 
-   
-    while (pangolin::ShouldQuit() == false) {
+    while (pangolin::ShouldQuit() == false)
+    {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         d_cam.Activate(s_cam);
@@ -183,11 +181,11 @@ void Draw()
         // draw poses
         float sz = 0.1;
         int width = 640, height = 480;
-        
+
         glLineWidth(2);
-        if(Trajectory2.size() > 1)
+        if (Trajectory2.size() > 1)
         {
-            for(int i = 0;i < Trajectory2.size() - 1;i++)
+            for (int i = 0; i < Trajectory2.size() - 1; i++)
             {
                 glColor3f(0, 1, 0);
                 glBegin(GL_LINES);
@@ -198,61 +196,60 @@ void Draw()
             }
         }
 
-
-        if(pMap->points.size() > 2)
+        if (pMap->points.size() > 2)
         {
             glPointSize(1);
             glBegin(GL_POINTS);
-            for (size_t i = 0; i < pMap->points.size(); i++) 
+            for (size_t i = 0; i < pMap->points.size(); i++)
             {
                 glColor3f(0.6, 0.6, 0.6);
-                glVertex3d(pMap->points[i].x, 
-                    pMap->points[i].y, 
-                    pMap->points[i].z);
+                glVertex3d(pMap->points[i].x,
+                           pMap->points[i].y,
+                           pMap->points[i].z);
             }
             glEnd();
         }
-        
-        if(laserReg.points.size() > 2)
+
+        if (laserReg.points.size() > 2)
         {
             glPointSize(1);
             glBegin(GL_POINTS);
-            for (size_t i = 0; i < laserReg.points.size(); i++) 
+            for (size_t i = 0; i < laserReg.points.size(); i++)
             {
                 glColor3f(1, 0, 0);
-                glVertex3d(laserReg.points[i].x, 
-                    laserReg.points[i].y, 
-                    laserReg.points[i].z);
+                glVertex3d(laserReg.points[i].x,
+                           laserReg.points[i].y,
+                           laserReg.points[i].z);
             }
             glEnd();
         }
 
         pangolin::FinishFrame();
-        
-        usleep(5000);   // sleep 5 ms
+
+        usleep(5000); // sleep 5 ms
     }
 }
 
-int main (int argc, char** argv)
+int main(int argc, char **argv)
 {
-	//loam::BasicScanRegistration res;
-	//res.nScans = 16;
-    
+    //loam::BasicScanRegistration res;
+    //res.nScans = 16;
+
     vector<string> files = loadData();
 
     // for(auto& f:files)
     //     cout<<f<<endl;
-    std::thread registration([&](){
-        for(int i = 0; i < nFRAMES; i++)
+    std::thread registration([&]() {
+        for (int i = 0; i < nFRAMES; i++)
         {
             m_buf.lock();
 
             //cout<<i<<endl;
-            pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
+            pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
 
-            if (pcl::io::loadPCDFile<pcl::PointXYZ> (files[i], *cloud) == -1) //* load the file
+            if (pcl::io::loadPCDFile<pcl::PointXYZ>(files[i], *cloud) == -1) //* load the file
             {
-                PCL_ERROR ("Couldn't read file \n");
+                PCL_ERROR("Couldn't read file \n");
                 return (-1);
             }
 
@@ -272,20 +269,19 @@ int main (int argc, char** argv)
             m_buf.unlock();
         }
     });
-    
 
-    std::thread odometry([&](){
-        while(true)
+    std::thread odometry([&]() {
+        while (true)
         {
 
             std::unique_lock<std::mutex> lk(m_buf);
             con.wait(lk);
             //std::chrono::steady_clock::time_point  now = std::chrono::steady_clock::now();
-            if((!fullRes_buf.empty()) && 
-               (!pointsSharp_buf.empty()) && 
-               (!lessSharp_buf.empty()) && 
-               (!pointsFlat_buf.empty()) && 
-               (!lessFlat_buf.empty()))
+            if ((!fullRes_buf.empty()) &&
+                (!pointsSharp_buf.empty()) &&
+                (!lessSharp_buf.empty()) &&
+                (!pointsFlat_buf.empty()) &&
+                (!lessFlat_buf.empty()))
             {
                 pcl::PointCloud<pcl::PointXYZI> _fullRes = std::move(fullRes_buf.front());
                 fullRes_buf.pop();
@@ -298,23 +294,22 @@ int main (int argc, char** argv)
                 pcl::PointCloud<pcl::PointXYZI> _lessFlat = std::move(lessFlat_buf.front());
                 lessFlat_buf.pop();
                 laserOdom.readCloud(_fullRes, _cornerCloud, _lessSharp, _cloudFlat, _lessFlat);
-
             }
             else
                 continue;
             lk.unlock();
-            std::chrono::steady_clock::time_point  now = std::chrono::steady_clock::now();
+            std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
             laserOdom.process();
             m_transMain.lock();
             transMain.handleLaserOdom(laserOdom.transformSum());
             Trajectory2.push_back(Eigen::Vector3d(transMain.transformMapped()[3],
-                                                transMain.transformMapped()[4],
-                                                transMain.transformMapped()[5]));
+                                                  transMain.transformMapped()[4],
+                                                  transMain.transformMapped()[5]));
             m_transMain.unlock();
             m_odom2map.lock();
-            if(laserOdom._ioRatio < 2 || laserOdom.frameCount() % laserOdom._ioRatio == 1 )
+            if (laserOdom._ioRatio < 2 || laserOdom.frameCount() % laserOdom._ioRatio == 1)
             {
-                while(fullRes_odom2map.size() > MaxQueueLength)
+                while (fullRes_odom2map.size() > MaxQueueLength)
                 {
                     fullRes_odom2map.pop();
                     corner_odom2map.pop();
@@ -330,20 +325,20 @@ int main (int argc, char** argv)
 
             auto t2 = std::chrono::steady_clock::now();
             std::chrono::duration<double> time_span = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - now);
-            std::cout << "odometry process time: " << time_span.count() << " seconds."<<endl;
+            std::cout << "odometry process time: " << time_span.count() << " seconds." << endl;
             //cout<<laserOdom._transformSum.pos.transpose()<<endl;
         }
     });
-   
+
     pMap = laserMap._laserCloudSurroundDS;
-    
-    std::thread mapping([&](){
-        while(true)
+
+    std::thread mapping([&]() {
+        while (true)
         {
-            if((!fullRes_odom2map.empty()) && 
-               (!corner_odom2map.empty()) && 
-               (!surf_odom2map.empty()) &&
-               (!trans_odom2map.empty()))
+            if ((!fullRes_odom2map.empty()) &&
+                (!corner_odom2map.empty()) &&
+                (!surf_odom2map.empty()) &&
+                (!trans_odom2map.empty()))
             {
                 m_odom2map.lock();
                 pcl::PointCloud<pcl::PointXYZI> _fullRes = std::move(fullRes_odom2map.front());
@@ -359,7 +354,7 @@ int main (int argc, char** argv)
             }
             else
                 continue;
-            std::chrono::steady_clock::time_point  now = std::chrono::steady_clock::now();
+            std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
             laserMap.process();
             laserReg = std::move(*(laserMap._laserCloudFullRes));
             m_transMain.lock();
@@ -368,9 +363,9 @@ int main (int argc, char** argv)
             auto t2 = std::chrono::steady_clock::now();
             //Trajectory.push_back(laserMap.transformAftMapped());
             std::chrono::duration<double> time_span = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - now);
-            std::cout << "mapping process time: " << time_span.count() << " seconds."<<endl;
+            std::cout << "mapping process time: " << time_span.count() << " seconds." << endl;
         }
-   });
+    });
 
     Draw();
     registration.join();
